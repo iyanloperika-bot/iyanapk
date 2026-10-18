@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "BookmarkedTool": {
+      "title": "BookmarkedTool",
+      "description": "Represents a user's bookmarked API or Maker tool in Julian OmniCore.",
+      "type": "object",
+      "properties": {
+        "toolId": {
+          "type": "string",
+          "description": "Unique identifier of the tool from the 85-tool catalog."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the tool.",
+          "enum": [
+            "AI",
+            "DOWNLOAD",
+            "INFO",
+            "MAKER",
+            "MUSIC",
+            "RANDOM",
+            "SEARCH",
+            "TOOLS",
+            "UPLOAD"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional user note or preset parameter hint for this tool."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated owner."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the bookmark was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the bookmark was last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "toolId",
+        "category",
+        "note",
+        "userId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserApiConfig": {
+      "title": "UserApiConfig",
+      "description": "Stores a user's custom REST API base URL, header key, and preferred execution mode.",
+      "type": "object",
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "description": "Custom REST server base URL."
+        },
+        "apiKeyHeader": {
+          "type": "string",
+          "description": "Optional API key header value for custom REST server."
+        },
+        "executionMode": {
+          "type": "string",
+          "description": "Preferred execution mode across the 85 tools.",
+          "enum": [
+            "HYBRID",
+            "NATIVE_AI",
+            "LIVE_REST"
+          ]
+        },
+        "enableHighThinking": {
+          "type": "boolean",
+          "description": "Whether high thinking mode (gemini-4-argon) is enabled by default for complex queries."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated owner."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the config was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the config was last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "baseUrl",
+        "apiKeyHeader",
+        "executionMode",
+        "enableHighThinking",
+        "userId",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/bookmarks/{toolId}": {
+      "schema": {
+        "$ref": "#/entities/BookmarkedTool"
+      },
+      "description": "Stores bookmarked tools per authenticated user."
+    },
+    "/users/{userId}/settings/{configId}": {
+      "schema": {
+        "$ref": "#/entities/UserApiConfig"
+      },
+      "description": "Stores custom API endpoint settings per authenticated user."
+    }
+  }
+}

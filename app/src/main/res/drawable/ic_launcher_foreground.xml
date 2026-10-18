@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Quantum Hex Ring -->
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M54,22L81.7,38V70L54,86L26.3,70V38L54,22ZM54,27.2L30.8,40.6V67.4L54,80.8L77.2,67.4V40.6L54,27.2Z" />
+    <!-- Bold Imperial Gold Geometric J & Core Monogram -->
+    <path
+        android:fillColor="#E5B842"
+        android:pathData="M44,35H66V60C66,68.8 58.8,76 50,76C42.5,76 36.2,70.8 34.5,63.8L42.3,61.8C43.2,65.4 46.3,68 50,68C54.4,68 58,64.4 58,60V43H44V35Z" />
+    <!-- Quantum Core Diamond Accent -->
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M45,48L51,54L45,60L39,54Z" />
+</vector>

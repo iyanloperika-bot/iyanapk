@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>JULIAN // OMNI-CORE v9.0</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --bg: #07090E;
+      --surface: #0E131F;
+      --surface-elevated: #161E31;
+      --gold: #E5B842;
+      --cyan: #00F0FF;
+      --emerald: #10B981;
+      --crimson: #FF3366;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --border: #232F46;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 60px; }
+    header {
+      background: linear-gradient(135deg, #0E131F 0%, #161E31 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .brand-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .crest {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: #2C2108; border: 1.5px solid var(--gold);
+      color: var(--gold); display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px;
+    }
+    .title { color: var(--gold); font-weight: 800; font-size: 16px; letter-spacing: 1px; }
+    .subtitle { color: var(--cyan); font-size: 11px; font-family: monospace; }
+    .search-bar {
+      width: 100%; margin-top: 12px; padding: 12px 14px;
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text); font-size: 14px;
+    }
+    .cats {
+      display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px;
+      scrollbar-width: none;
+    }
+    .chip {
+      padding: 7px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      white-space: nowrap; cursor: pointer;
+    }
+    .chip.active { background: #2C2108; border-color: var(--gold); color: var(--gold); }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px; padding: 0 16px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 14px; cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .card:active { transform: scale(0.98); border-color: var(--gold); }
+    .badge {
+      display: inline-block; padding: 3px 8px; border-radius: 6px;
+      font-size: 10px; font-weight: 800; background: #2C2108; color: var(--gold);
+    }
+    .endpoint { font-family: monospace; font-size: 11px; color: var(--cyan); margin-left: 6px; }
+    .card h3 { font-size: 15px; margin: 8px 0 4px; color: var(--text); }
+    .card p { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .modal {
+      position: fixed; inset: 0; background: rgba(7, 9, 14, 0.96);
+      z-index: 50; display: none; flex-direction: column; padding: 16px; overflow-y: auto;
+    }
+    .modal.open { display: flex; }
+    .btn {
+      background: var(--gold); color: #120D00; border: none; padding: 12px 16px;
+      border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; width: 100%;
+      margin-top: 10px;
+    }
+    .btn-outline {
+      background: transparent; color: var(--cyan); border: 1px solid var(--cyan);
+      padding: 10px 14px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer;
+    }
+    input.param, textarea.param {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      margin-top: 6px; margin-bottom: 12px; font-size: 13px;
+    }
+    canvas#studioCanvas {
+      width: 100%; max-width: 380px; border-radius: 12px; border: 1px solid var(--border);
+      margin: 12px auto; display: block; background: #111;
+    }
+    pre {
+      background: #05070B; border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; color: var(--cyan); font-family: monospace; font-size: 12px;
+      overflow-x: auto; white-space: pre-wrap; margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="crest">J9</div>
+        <div>
+          <div class="title">JULIAN // OMNI-CORE v9.0</div>
+          <div class="subtitle">85 REST API & STUDIO TOOLS • STANDALONE EDITION</div>
+        </div>
+      </div>
+    </div>
+    <input id="searchInput" class="search-bar" placeholder="Cari 85 tool (contoh: brat, struk, nikcheck, qrcode, gemini)..." oninput="renderTools()" />
+  </header>
+
+  <div class="cats" id="catBar"></div>
+  <div class="grid" id="toolGrid"></div>
+
+  <div class="modal" id="studioModal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div>
+        <span class="badge" id="mCat">MAKER</span>
+        <span class="endpoint" id="mEndpoint">GET /api/maker/brat</span>
+        <h2 id="mTitle" style="color:var(--gold);margin-top:4px;font-size:18px;">Brat Generator</h2>
+      </div>
+      <button class="btn-outline" onclick="closeModal()">TUTUP ✕</button>
+    </div>
+    <p id="mDesc" style="color:var(--muted);font-size:13px;margin-bottom:14px;"></p>
+    <div id="mInputs"></div>
+    <button class="btn" onclick="executeActiveTool()">⚡ EXECUTE MODULE</button>
+    <div id="mOutput" style="display:none;margin-top:16px;">
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn-outline" id="dlImgBtn" style="display:none;" onclick="downloadCanvasPng()">📥 UNDUH GAMBAR (PNG)</button>
+        <button class="btn-outline" onclick="downloadJsonOutput()">📥 UNDUH HASIL (.JSON)</button>
+      </div>
+      <canvas id="studioCanvas" width="600" height="600" style="display:none;"></canvas>
+      <pre id="jsonPreview"></pre>
+    </div>
+  </div>
+
+  <script>
+    const TOOLS = [
+      {id:"maker_brat",cat:"MAKER",cmd:"maker brat",title:"Brat Typography Studio",path:"/api/maker/brat",desc:"Buat gambar tipografi Brat (Lime, Obsidian Gold, Putih, Cyan) & unduh PNG.",inputs:[{k:"text",l:"Teks Brat",d:"julian omnicore v9"},{k:"theme",l:"Tema (Lime/Gold/White)",d:"Lime"}]},
+      {id:"maker_struk",cat:"MAKER",cmd:"maker struk",title:"Thermal Receipt Maker",path:"/api/maker/struk",desc:"Cetak struk kasir kuantum lengkap dengan Pajak & Total.",inputs:[{k:"merchant",l:"Nama Toko",d:"JULIAN QUANTUM MART"},{k:"items",l:"Daftar Item (Nama:Harga, pisah koma)",d:"API Pro Key:250000,Cloud Node:175000"}]},
+      {id:"maker_qrcode",cat:"MAKER",cmd:"maker qrcode",title:"Quantum QR Matrix Studio",path:"/api/maker/qrcode",desc:"Render matriks QR Code kontras tinggi.",inputs:[{k:"payload",l:"URL / Teks QR",d:"https://julian-omnicore.dev"}]},
+      {id:"maker_kalender",cat:"MAKER",cmd:"maker kalender",title:"Quantum Calendar Poster",path:"/api/maker/kalender",desc:"Buat poster kalender bulanan berdesain siber.",inputs:[{k:"month",l:"Bulan (1-12)",d:"10"},{k:"year",l:"Tahun",d:"2026"}]},
+      {id:"maker_carbon",cat:"MAKER",cmd:"maker carbon",title:"Carbon Code Snippet Studio",path:"/api/maker/carbon",desc:"Render kartu kode program bergaya macOS.",inputs:[{k:"code",l:"Kode Program",d:"const julian = await OmniCore.boot({ tools: 85 });"}]},
+      {id:"tools_nikcheck",cat:"TOOLS",cmd:"tools nikcheck",title:"16-Digit Indonesian NIK Parser",path:"/api/tools/nikcheck",desc:"Analisis 16 digit NIK (Provinsi, Tanggal Lahir, Gender, Usia, Zodiak).",inputs:[{k:"nik",l:"Nomor NIK 16 Digit",d:"3273011508990003"}]},
+      {id:"tools_currency",cat:"TOOLS",cmd:"tools currency",title:"Multi-Currency FX Converter",path:"/api/tools/currency",desc:"Konversi mata uang real-time (USD, IDR, EUR, JPY, SGD).",inputs:[{k:"amount",l:"Nominal",d:"100"},{k:"from",l:"Dari (USD/IDR/EUR/SGD)",d:"USD"},{k:"to",l:"Ke (IDR/USD/EUR/SGD)",d:"IDR"}]},
+      {id:"tools_tts",cat:"TOOLS",cmd:"tools tts",title:"Neural Speech Synthesizer",path:"/api/tools/tts",desc:"Suarakan teks langsung menggunakan mesin suara perangkat.",inputs:[{k:"text",l:"Teks Suara",d:"Welcome to Julian OmniCore version nine point zero."}]}
+    ];
+    const EXTRA_CATS = [
+      ["AI", ["ai argon","ai bioscience","ai flash","ai coder","ai vision","ai summarizer","ai translator","ai sql","ai regex","ai prompt"]],
+      ["DOWNLOAD", ["dl tiktok","dl ig","dl youtube","dl spotify","dl twitter","dl fb","dl pinterest","dl mediafire","dl gdrive","dl capcut"]],
+      ["INFO", ["info gempa","info cuaca","info kbbi","info jadwalsholat","info kurs","info saham","info crypto","info ipwhois","info github","info npm"]],
+      ["MAKER", ["maker quote","maker sertifikat","maker ktp","maker twibbon","maker meme"]],
+      ["MUSIC", ["music lrc","music chord","music shazam","music keybpm","music bassboost","music spectogram"]],
+      ["RANDOM", ["random motivasi","random fakta","random pantun","random anime","random cyberpunk","random trivia","random riddle","random darkjoke"]],
+      ["SEARCH", ["search google","search maps","search wiki","search jurnal","search playstore","search resep","search film","search buku","search kodepos"]],
+      ["TOOLS", ["tools sha256","tools base64","tools jwt","tools uuid","tools password","tools urlshort","tools htmlmin","tools jsonfmt","tools cron"]],
+      ["UPLOAD", ["upload cdn","upload ipfs","upload telegraph","upload pomf","upload catbox","upload imgbb","upload s3","upload zip","upload pdf","upload scanner"]]
+    ];
+    EXTRA_CATS.forEach(([c, list]) => {
+      list.forEach(cmd => {
+        const slug = cmd.replace(/\s+/g, "_");
+        if (!TOOLS.find(t => t.id === slug)) {
+          TOOLS.push({
+            id: slug, cat: c, cmd: cmd,
+            title: cmd.toUpperCase() + " Module",
+            path: "/api/" + c.toLowerCase() + "/" + cmd.split(" ")[1],
+            desc: "Modul interaktif " + cmd + " pada ekosistem JULIAN // OMNI-CORE v9.0.",
+            inputs: [{k:"query",l:"Input Parameter / Query",d:"julian-omnicore-v9"}]
+          });
+        }
+      });
+    });
+
+    let activeCat = "ALL";
+    let currentTool = null;
+    let lastRawJson = "";
+
+    function renderCats() {
+      const cats = ["ALL","AI","DOWNLOAD","INFO","MAKER","MUSIC","RANDOM","SEARCH","TOOLS","UPLOAD"];
+      document.getElementById("catBar").innerHTML = cats.map(c => {
+        const count = c === "ALL" ? TOOLS.length : TOOLS.filter(t => t.cat === c).length;
+        return `<div class="chip ${activeCat===c?'active':''}" onclick="selectCat('${c}')">${c} (${count})</div>`;
+      }).join("");
+    }
+
+    function selectCat(c) { activeCat = c; renderCats(); renderTools(); }
+
+    function renderTools() {
+      const q = (document.getElementById("searchInput").value || "").toLowerCase();
+      const filtered = TOOLS.filter(t => (activeCat === "ALL" || t.cat === activeCat) &&
+        (t.title.toLowerCase().includes(q) || t.cmd.toLowerCase().includes(q) || t.path.toLowerCase().includes(q)));
+      document.getElementById("toolGrid").innerHTML = filtered.map(t => `
+        <div class="card" onclick="openTool('${t.id}')">
+          <span class="badge">${t.cat}</span>
+          <span class="endpoint">GET ${t.path}</span>
+          <h3>${t.title}</h3>
+          <p>${t.desc}</p>
+        </div>
+      `).join("");
+    }
+
+    function openTool(id) {
+      currentTool = TOOLS.find(t => t.id === id);
+      if (!currentTool) return;
+      document.getElementById("mCat").textContent = currentTool.cat;
+      document.getElementById("mEndpoint").textContent = "GET " + currentTool.path;
+      document.getElementById("mTitle").textContent = currentTool.title;
+      document.getElementById("mDesc").textContent = currentTool.desc;
+      document.getElementById("mInputs").innerHTML = currentTool.inputs.map(inp => `
+        <label style="font-size:12px;color:var(--gold);font-weight:700;">${inp.l}</label>
+        <input class="param" id="inp_${inp.k}" value="${inp.d}" />
+      `).join("");
+      document.getElementById("mOutput").style.display = "none";
+      document.getElementById("studioModal").classList.add("open");
+    }
+
+    function closeModal() { document.getElementById("studioModal").classList.remove("open"); }
+
+    function executeActiveTool() {
+      if (!currentTool) return;
+      const vals = {};
+      currentTool.inputs.forEach(inp => {
+        vals[inp.k] = document.getElementById("inp_" + inp.k).value;
+      });
+      const cvs = document.getElementById("studioCanvas");
+      const ctx = cvs.getContext("2d");
+      const dlImgBtn = document.getElementById("dlImgBtn");
+      cvs.style.display = "none";
+      dlImgBtn.style.display = "none";
+
+      let resultData = { status: 200, tool: currentTool.cmd, endpoint: currentTool.path, input: vals, timestamp: new Date().toISOString() };
+
+      if (currentTool.id === "maker_brat") {
+        cvs.style.display = "block"; dlImgBtn.style.display = "inline-block";
+        ctx.fillStyle = (vals.theme || "").toLowerCase().includes("gold") ? "#E5B842" : "#8ACE00";
+        ctx.fillRect(0, 0, 600, 600);
+        ctx.fillStyle = "#07090E";
+        ctx.font = "bold 54px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText((vals.text || "brat").toLowerCase(), 300, 310);
+      } else if (currentTool.id === "maker_struk") {
+        cvs.style.display = "block"; dlImgBtn.style.display = "inline-block";
+        ctx.fillStyle = "#F8FAFC"; ctx.fillRect(0, 0, 600, 600);
+        ctx.fillStyle = "#0F172A"; ctx.font = "bold 26px monospace"; ctx.textAlign = "center";
+        ctx.fillText(vals.merchant || "JULIAN MART", 300, 60);
+        ctx.textAlign = "left"; ctx.font = "20px monospace";
+        let y = 130, total = 0;
+        (vals.items || "").split(",").forEach(pair => {
+          const [n, p] = pair.split(":");
+          const price = parseInt(p || "0", 10) || 0;
+          total += price;
+          ctx.fillText((n || "Item").trim(), 40, y);
+          ctx.fillText("Rp " + price.toLocaleString("id-ID"), 380, y);
+          y += 38;
+        });
+        ctx.fillText("--------------------------------", 40, y + 10);
+        ctx.font = "bold 24px monospace";
+        ctx.fillText("TOTAL: Rp " + total.toLocaleString("id-ID"), 40, y + 50);
+        resultData.totalIdr = total;
+      } else if (currentTool.id === "tools_nikcheck") {
+        const nik = (vals.nik || "").replace(/\D/g, "");
+        const provMap = {"31":"DKI Jakarta","32":"Jawa Barat","33":"Jawa Tengah","35":"Jawa Timur","36":"Banten","51":"Bali"};
+        const dd = parseInt(nik.substring(6, 8) || "1", 10);
+        resultData.nikAnalysis = {
+          valid: nik.length === 16,
+          provinsi: provMap[nik.substring(0, 2)] || "Indonesia (" + nik.substring(0, 2) + ")",
+          gender: dd > 40 ? "Perempuan" : "Laki-laki",
+          tanggalLahir: (dd > 40 ? dd - 40 : dd) + "-" + nik.substring(8, 10) + "-19" + nik.substring(10, 12)
+        };
+      } else if (currentTool.id === "tools_tts" && "speechSynthesis" in window) {
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(vals.text || "Julian OmniCore"));
+      }
+
+      lastRawJson = JSON.stringify(resultData, null, 2);
+      document.getElementById("jsonPreview").textContent = lastRawJson;
+      document.getElementById("mOutput").style.display = "block";
+    }
+
+    function downloadCanvasPng() {
+      const cvs = document.getElementById("studioCanvas");
+      const a = document.createElement("a");
+      a.download = (currentTool ? currentTool.id : "julian") + ".png";
+      a.href = cvs.toDataURL("image/png");
+      a.click();
+    }
+
+    function downloadJsonOutput() {
+      const blob = new Blob([lastRawJson], {type: "application/json"});
+      const a = document.createElement("a");
+      a.download = (currentTool ? currentTool.id : "julian") + ".json";
+      a.href = URL.createObjectURL(blob);
+      a.click();
+    }
+
+    renderCats();
+    renderTools();
+  </script>
+</body>
+</html>

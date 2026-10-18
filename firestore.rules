@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validation Blueprint: BookmarkedTool
+    function isValidBookmarkedTool(data, userId, toolId) {
+      return data.keys().hasAll(['toolId', 'category', 'note', 'userId', 'createdAt', 'updatedAt']) &&
+             data.keys().hasOnly(['toolId', 'category', 'note', 'userId', 'createdAt', 'updatedAt']) &&
+             data.toolId is string && data.toolId == toolId && data.toolId.size() >= 1 && data.toolId.size() <= 64 &&
+             data.category is string && data.category in ['AI', 'DOWNLOAD', 'INFO', 'MAKER', 'MUSIC', 'RANDOM', 'SEARCH', 'TOOLS', 'UPLOAD'] &&
+             data.note is string && data.note.size() <= 300 &&
+             data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Entity Validation Blueprint: UserApiConfig
+    function isValidUserApiConfig(data, userId) {
+      return data.keys().hasAll(['baseUrl', 'apiKeyHeader', 'executionMode', 'enableHighThinking', 'userId', 'createdAt', 'updatedAt']) &&
+             data.keys().hasOnly(['baseUrl', 'apiKeyHeader', 'executionMode', 'enableHighThinking', 'userId', 'createdAt', 'updatedAt']) &&
+             data.baseUrl is string && data.baseUrl.size() >= 1 && data.baseUrl.size() <= 300 &&
+             data.apiKeyHeader is string && data.apiKeyHeader.size() <= 200 &&
+             data.executionMode is string && data.executionMode in ['HYBRID', 'NATIVE_AI', 'LIVE_REST'] &&
+             data.enableHighThinking is bool &&
+             data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // User Bookmarks Subcollection
+    match /users/{userId}/bookmarks/{toolId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(toolId);
+      allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(toolId) &&
+                       isValidBookmarkedTool(incoming(), userId, toolId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(toolId) &&
+                       isValidBookmarkedTool(incoming(), userId, toolId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().toolId == existing().toolId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['category', 'note', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(toolId);
+    }
+
+    // User API Config Subcollection
+    match /users/{userId}/settings/{configId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(configId);
+      allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(configId) &&
+                       isValidUserApiConfig(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(configId) &&
+                       isValidUserApiConfig(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['baseUrl', 'apiKeyHeader', 'executionMode', 'enableHighThinking', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(configId);
+    }
+  }
+}
