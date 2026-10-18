@@ -1,9 +1,7 @@
-name: Android CI
+name: Build Android APK
 
 on:
   push:
-    branches: [ "utama" ]
-  pull_request:
     branches: [ "utama" ]
   workflow_dispatch:
 
